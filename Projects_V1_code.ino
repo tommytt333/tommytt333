@@ -1,3 +1,7 @@
+#include <SoftwareSerial.h>
+SoftwareSerial mySerial(0,1);
+int ledpin=3
+  
 //Sensor Setup
 int TMP36OutputPin = 7; //This reads the TMP36 ouput
 float Temperture; // Double command can be used here depends on how percise TMP36 is
@@ -29,7 +33,12 @@ Serial.begin(9600); // Default port used
  pinMode(trigPin, OUTPUT); // Sets the trigPin as an OUTPUT
  pinMode(echoPin, INPUT); // Sets the echoPin as an INPUT
  Serial.println("Ultrasonic Sensor HC-SR04 Test"); // print some text in Serial Monitor
- Serial.println("with Arduino Nano");}
+ Serial.println("with Arduino Nano");
+
+//Bluetooth Setup
+  mySerial.begin(9600)
+    pinMode(ledpin, OUTPUT)
+}
 
   
 
@@ -93,5 +102,24 @@ delay(1000);
   Serial.println(" cm");
   Serial.println("");
   //Ultrasonic sensor code
+  
+  //Bluetooth code
+  int i;
+ 
+if (mySerial.available())
+{
+i=mySerial.read();
+Serial.println("DATA RECEIVED:");
+if(i=='1')
+{
+digitalWrite(ledpin,0);
+Serial.println("led on");
+}
+if(i=='1')
+{
+digitalWrite(ledpin,1);
+Serial.println("led off");
+}
+}
 }
   
