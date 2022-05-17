@@ -1,0 +1,215 @@
+//BT Setup
+#include <SoftwareSerial.h>
+SoftwareSerial HM10(0, 1); // RX = 0, TX = 1
+char appData;  
+String inData = "";
+  
+//Sensor Setup
+/*int TMP36OutputPin = 7; //This reads the TMP36 ouput
+unsigned int Temperture; // Double command can be used here depends on how percise TMP36 is
+unsigned int TMP36Voltage;
+byte Min;
+byte Max;
+byte Analog;
+unsigned long Sum;
+unsigned long Average;
+*/
+
+int sensorPin = 7; //the analog pin the TMP36's Vout (sense) pin is connected to
+
+// defines variables for SR04
+long duration; // variable for the duration of sound wave travel
+int distance; // variable for the distance measurement
+#define echoPin 8 // attach pin D8 Arduino to pin Echo of HC-SR04
+#define trigPin 7 //attach pin D7 Arduino to pin Trig of HC-SR04
+
+//OLED Setup
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+  
+
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600); // Default port used
+  
+  //BT Setup
+  Serial.println("HM10 serial started at 9600");
+  HM10.begin(9600); // set HM10 serial at 9600 baud rate
+  
+  //Pin Setup
+ pinMode(3, OUTPUT);    // sets the digital pin 3 as output
+ pinMode(4, OUTPUT);    // sets the digital pin 4 as output
+  
+ pinMode(5, OUTPUT);    // sets the digital pin 5 as output
+ pinMode(6, OUTPUT);    // sets the digital pin 6 as output
+
+  //SR04 Setup
+ pinMode(trigPin, OUTPUT); // Sets the trigPin as an OUTPUT
+ pinMode(echoPin, INPUT); // Sets the echoPin as an INPUT
+ Serial.println("Ultrasonic Sensor HC-SR04 Test"); // print some text in Serial Monitor
+ Serial.println("with Arduino Nano");
+
+delay(500);
+
+
+
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;);
+  }
+  delay(2000);
+  display.clearDisplay();
+
+  display.setTextSize(1.5);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 10);
+  // Display static text
+  display.println("Test Mode");
+  display.display(); 
+  display.clearDisplay();
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  //Temperture Sensor Code
+  delay(1000);
+  /*
+  unsigned int TMP36Value = analogRead(TMP36OutputPin); // Reads TMP36 output and stores value
+  TMP36Voltage = TMP36Value * 5;
+  TMP36Voltage = TMP36Voltage / 1024;
+  Temperture = (TMP36Voltage - 0.5) * 100; // Equation to convert to temeprture
+  */
+
+  int reading = analogRead(sensorPin);  
+// converting that reading to voltage, for 3.3v arduino use 3.3
+ float voltage = reading * 5.0;
+ voltage /= 1024.0; 
+ 
+ // print out the voltage
+ Serial.print(voltage); Serial.println(" volts");
+ 
+ // now print out the temperature
+ float temperatureC = (voltage - 0.5) * 100 ;  //converting from 10 mv per degree wit 500 mV offset
+                                               //to degrees ((voltage - 500mV) times 100)
+ Serial.print(temperatureC); Serial.println(" degrees C");
+
+  
+
+  //digitalWrite(3, HIGH); // Used to test LED
+  //digitalWrite(4, HIGH); // Used to test LED
+
+
+  //If statment. If temperture is greater than 24 Relay will come on
+
+  if ( temperatureC > 25.00 && (distance < 50) )
+  {
+    digitalWrite(5, HIGH); //write digital pin 3 high
+    digitalWrite(6, HIGH); //write digital pin 4 high
+   // digitalWrite(3, HIGH); //write digital pin 3 high so green led turns on
+   // digitalWrite(4, HIGH) ; //write digital pin 4 high so red led turns on
+  }
+  //If temperture is lower than 24 relays get no power
+   if ( temperatureC > 26.00 && (distance < 50) ) {
+    digitalWrite(5, HIGH); //if it isn't higher than 512, make pin 3 low
+    digitalWrite(6, HIGH); //if it isn't higher than 512, make pin 4 low
+   // digitalWrite(3, LOW); //write digital pin 3 high so green led turns off
+   // digitalWrite(4, LOW); //write digital pin 4 high so red led turns off
+  }
+  //////////////////////////////////////////////
+  //////////////////////////////////////////////
+
+  //Ultrasonic sensor code
+delay(1000);
+  // Clears the trigPin condition
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  //Sets the trigPin HIGH (ACTIVE) for 10 microseconds
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite( trigPin, LOW);
+  // Reads the echoPin, returns the sound wave travel time in microseconds
+  duration = pulseIn(echoPin, HIGH);
+  // Calculating the distance
+  distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
+  //Displays the distance on the Serial Monitor
+  Serial.print("Distance:");
+  Serial.print(distance);
+  Serial.println("cm");
+  Serial.println("");
+  //Ultrasonic sensor code
+
+//Resets before printing again
+display.clearDisplay();
+display.setTextSize(1);
+display.setTextColor(WHITE);
+display.setCursor(0,10);
+display.print("Temperture");
+display.setCursor(3,24);
+display.setTextSize(2);
+display.drawRect(0, 19, 87, 24,WHITE);
+display.fillRect(3, 22, 74, 18,BLACK);
+display.print(temperatureC);
+display.setCursor(62,24); 
+display.print((char)247);
+display.setCursor(74,24);
+display.println("C");
+
+display.display();
+//delay(1000);
+  
+  //Bluetooth code
+ {
+  HM10.listen();  // listen the HM10 port
+  while (HM10.available() > 0) {   // if HM10 sends something then read
+    appData = HM10.read();
+    inData = String(appData);  // save the data in string format
+    Serial.write(appData);
+  }
+
+ 
+  if (Serial.available()) {           // Read user input if available.
+    delay(10);
+    HM10.write(Serial.read());
+  }
+  if ( inData == "1") {
+    Serial.println("LED OFF");
+    digitalWrite(3, LOW); // switch OFF LED
+    digitalWrite(4, HIGH); // switch OFF LED
+    delay(500);
+  }
+  if ( inData == "2") {
+    Serial.println("LED ON");
+    digitalWrite(3, HIGH); // switch OFF LED
+    digitalWrite(4, LOW); // switch OFF LED
+    delay(500);
+  }
+  if (inData == "3"){
+    Serial.println("LED FLASH TEST");
+   digitalWrite(3, HIGH); // switch OFF LED
+   digitalWrite(4, LOW); // switch OFF LED
+   
+   delay(100);
+    digitalWrite(4, HIGH); // switch OFF LED
+    digitalWrite(3, LOW); // switch OFF LED
+    delay(100);
+}
+if ( inData == "4") {
+    Serial.println("PINS SET TO LOW");
+    digitalWrite(3, LOW); // switch OFF LED
+    digitalWrite(4, LOW); // switch OFF LED
+    delay(500);
+    
+   
+    
+}}}
