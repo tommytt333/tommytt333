@@ -1,3 +1,9 @@
+//BT Setup
+#include <SoftwareSerial.h>
+SoftwareSerial HM10(0, 1); // RX = 0, TX = 1
+char appData;  
+String inData = "";
+  
 //Sensor Setup
 int TMP36OutputPin = 7; //This reads the TMP36 ouput
 float Temperture; // Double command can be used here depends on how percise TMP36 is
@@ -17,19 +23,29 @@ int distance; // variable for the distance measurement
 
 void setup() {
   // put your setup code here, to run once:
-Serial.begin(9600); // Default port used
+  Serial.begin(9600); // Default port used
+  
+  //BT Setup
+  Serial.println("HM10 serial started at 9600");
+  HM10.begin(9600); // set HM10 serial at 9600 baud rate
+  
+  //Pin Setup
+ pinMode(3, OUTPUT);    // sets the digital pin 3 as output
+ pinMode(4, OUTPUT);    // sets the digital pin 4 as output
   
  pinMode(5, OUTPUT);    // sets the digital pin 5 as output
  pinMode(6, OUTPUT);    // sets the digital pin 6 as output
-
- pinMode(3, OUTPUT);    // sets the digital pin 3 as output
- pinMode(4, OUTPUT);    // sets the digital pin 4 as output
 
   //SR04 Setup
  pinMode(trigPin, OUTPUT); // Sets the trigPin as an OUTPUT
  pinMode(echoPin, INPUT); // Sets the echoPin as an INPUT
  Serial.println("Ultrasonic Sensor HC-SR04 Test"); // print some text in Serial Monitor
- Serial.println("with Arduino Nano");}
+ Serial.println("with Arduino Nano");
+
+//Bluetooth Setup
+  mySerial.begin(9600)
+    pinMode(ledpin, OUTPUT)
+}
 
   
 
@@ -93,5 +109,49 @@ delay(1000);
   Serial.println(" cm");
   Serial.println("");
   //Ultrasonic sensor code
+  
+  //Bluetooth code
+ {
+  HM10.listen();  // listen the HM10 port
+  while (HM10.available() > 0) {   // if HM10 sends something then read
+    appData = HM10.read();
+    inData = String(appData);  // save the data in string format
+    Serial.write(appData);
+  }
+
+ 
+  if (Serial.available()) {           // Read user input if available.
+    delay(10);
+    HM10.write(Serial.read());
+  }
+  if ( inData == "1") {
+    Serial.println("LED OFF");
+    digitalWrite(3, LOW); // switch OFF LED
+    digitalWrite(4, HIGH); // switch OFF LED
+    delay(500);
+  }
+  if ( inData == "2") {
+    Serial.println("LED ON");
+    digitalWrite(3, HIGH); // switch OFF LED
+    digitalWrite(4, LOW); // switch OFF LED
+    delay(500);
+  }
+  if (inData == "3"){
+    Serial.println("LED FLASH TEST");
+   digitalWrite(3, HIGH); // switch OFF LED
+   digitalWrite(4, LOW); // switch OFF LED
+   
+   delay(100);
+    digitalWrite(4, HIGH); // switch OFF LED
+    digitalWrite(3, LOW); // switch OFF LED
+    delay(100);
+}
+if ( inData == "4") {
+    Serial.println("PINS SET TO LOW");
+    digitalWrite(3, LOW); // switch OFF LED
+    digitalWrite(4, LOW); // switch OFF LED
+    delay(500);
+  }
+  
 }
   
